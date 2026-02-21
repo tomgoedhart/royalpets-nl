@@ -55,6 +55,23 @@
   - TypeScript fixes for nullable database fields
   - Typecheck passes, all 154 tests pass
 
+#### story-7-preview-gallery: Preview Gallery with Watermarks
+- Status: Completed
+- Date: 2026-02-21
+- Summary:
+  - app/create/preview/page.tsx with Suspense boundary for useSearchParams
+  - components/create/preview/gallery-grid.tsx with 2x2 grid layout for 4 images
+  - components/create/preview/image-card.tsx with hover effects and watermark overlay
+  - components/create/preview/watermark-overlay.tsx reusable component with diagonal pattern
+  - components/create/preview/lightbox.tsx for enlarged view with keyboard navigation
+  - Genereer 4 Nieuwe button for unlimited regenerations (calls /api/generate)
+  - Selected image stored in React state and persisted to database via API
+  - Proceed to pricing button enabled only when image selected
+  - API endpoints: GET /api/portraits/[id] and POST /api/portraits/[id]/select
+  - Dutch UI text and informative banner about watermarked previews
+  - 41 tests for gallery, image-card, watermark, and lightbox components
+  - Build passes, all 195 tests pass
+
 ### Codebase Patterns
 
 #### Testing Patterns
@@ -93,9 +110,10 @@
 - Implement proper cleanup on unmount (cancelAnimationFrame, abort controllers)
 - Use requestAnimationFrame for smooth progress animations
 - Status messages as array of objects with duration for rotating display
+- Wrap pages using useSearchParams in Suspense boundary with loading fallback
+- Use aria-pressed for toggle/select buttons to indicate selected state
 
-### Remaining Stories: 14
-- story-7-portrait-preview-ui
+### Remaining Stories: 13
 - story-8-stripe-integration
 - story-9-order-management
 - story-10-webhook-handlers
