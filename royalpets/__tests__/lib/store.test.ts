@@ -48,6 +48,7 @@ describe("useCreationStore", () => {
       expect(state.generatedImages).toBeNull();
       expect(state.generationError).toBeNull();
       expect(state.selectedImageIndex).toBeNull();
+      expect(state.selectedTierId).toBeNull();
     });
   });
 
@@ -344,6 +345,77 @@ describe("useCreationStore", () => {
     });
   });
 
+  describe("pricing actions", () => {
+    it("should set selected tier id", () => {
+      act(() => {
+        useCreationStore.getState().setSelectedTierId("digital-premium");
+      });
+      
+      expect(useCreationStore.getState().selectedTierId).toBe("digital-premium");
+    });
+
+    it("should clear selected tier id", () => {
+      act(() => {
+        useCreationStore.getState().setSelectedTierId("digital-premium");
+        useCreationStore.getState().setSelectedTierId(null);
+      });
+      
+      expect(useCreationStore.getState().selectedTierId).toBeNull();
+    });
+
+    it("should allow navigation to pricing when tier is selected", () => {
+      // Setup complete flow
+      act(() => {
+        useCreationStore.getState().addUploadedImage({ 
+          id: "img1", url: "url1", fileName: "test.jpg", fileSize: 1000, uploadedAt: "2024-01-01" 
+        });
+        useCreationStore.getState().setSelectedImageId("img1");
+        useCreationStore.getState().setSelectedCostume(costumes[0]);
+        useCreationStore.getState().setGenerationStatus("completed");
+        useCreationStore.getState().setGeneratedImages(["img1.jpg", "img2.jpg", "img3.jpg", "img4.jpg"]);
+        useCreationStore.getState().setSelectedImageIndex(0);
+        useCreationStore.getState().setSelectedTierId("digital-premium");
+      });
+      
+      const canNavigate = useCreationStore.getState().canNavigateToStep("pricing");
+      expect(canNavigate).toBe(true);
+    });
+
+    it("should allow navigation to pricing when all previous steps are complete", () => {
+      // Setup complete flow - canNavigateToStep checks if PREVIOUS steps are complete
+      // Tier selection is part of the pricing step itself, not a prerequisite
+      act(() => {
+        useCreationStore.getState().addUploadedImage({ 
+          id: "img1", url: "url1", fileName: "test.jpg", fileSize: 1000, uploadedAt: "2024-01-01" 
+        });
+        useCreationStore.getState().setSelectedImageId("img1");
+        useCreationStore.getState().setSelectedCostume(costumes[0]);
+        useCreationStore.getState().setGenerationStatus("completed");
+        useCreationStore.getState().setGeneratedImages(["img1.jpg", "img2.jpg", "img3.jpg", "img4.jpg"]);
+        useCreationStore.getState().setSelectedImageIndex(0);
+        useCreationStore.getState().setSelectedTierId(null);
+      });
+      
+      const canNavigate = useCreationStore.getState().canNavigateToStep("pricing");
+      expect(canNavigate).toBe(true);
+    });
+
+    it("should track tier selection as part of pricing completion", () => {
+      act(() => {
+        useCreationStore.getState().setSelectedTierId("digital-premium");
+      });
+      
+      expect(useCreationStore.getState().selectedTierId).toBe("digital-premium");
+      
+      // Verify it persists across state changes
+      act(() => {
+        useCreationStore.getState().setCurrentStep("pricing");
+      });
+      
+      expect(useCreationStore.getState().selectedTierId).toBe("digital-premium");
+    });
+  });
+
   describe("session management", () => {
     it("should clear generation state", () => {
       act(() => {
@@ -362,10 +434,11 @@ describe("useCreationStore", () => {
 
     it("should reset entire session", () => {
       act(() => {
-        useCreationStore.getState().setCurrentStep("preview");
+        useCreationStore.getState().setCurrentStep("pricing");
         useCreationStore.getState().addUploadedImage({ id: "img1", url: "url1", fileName: "test.jpg", fileSize: 1000, uploadedAt: "2024-01-01" });
         useCreationStore.getState().setSelectedCostume(costumes[0]);
         useCreationStore.getState().setPortraitId("portrait-123");
+        useCreationStore.getState().setSelectedTierId("digital-premium");
         useCreationStore.getState().resetSession();
       });
       
@@ -373,6 +446,7 @@ describe("useCreationStore", () => {
       expect(useCreationStore.getState().uploadedImages).toEqual([]);
       expect(useCreationStore.getState().selectedCostume).toBeNull();
       expect(useCreationStore.getState().portraitId).toBeNull();
+      expect(useCreationStore.getState().selectedTierId).toBeNull();
     });
   });
 

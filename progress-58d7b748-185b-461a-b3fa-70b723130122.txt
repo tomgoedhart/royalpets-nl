@@ -1,0 +1,52 @@
+# V2 Obsidian Plum Design System - Progress Log
+
+## Run ID: 58d7b748-185b-461a-b3fa-70b723130122
+
+## Completed Stories
+
+### v2-story-03: Update signUpTheme.ts to V2 Palette ✅
+
+**Date:** 2026-02-21
+
+**Changes:**
+- Updated SIGNUP_COLORS with V2 Obsidian Plum palette:
+  - backgroundDark: #2D1E2F
+  - backgroundMedium: #4E2A4F  
+  - accent (lavender): #C89BCC
+  - accentBg: rgba(200,155,204,0.12)
+  - accentBorder: rgba(200,155,204,0.25)
+- Added comprehensive JSDoc header documenting V2 design system
+- Added comments clarifying gold (#EC9C27) is RESERVED FOR VIP/PREMIUM ONLY
+- Updated SIGNUP_GRADIENTS with lavender accent variants:
+  - accent: ['#D4A8D8', '#C89BCC', '#B88EBC']
+  - accentSoft: ['rgba(200, 155, 204, 0.3)', 'rgba(200, 155, 204, 0.1)']
+  - button: ['#C89BCC', '#B88EBC']
+- Added new exports: SIGNUP_SPACING, SIGNUP_SHADOWS, SIGNUP_TYPOGRAPHY
+- Updated test file: client/constants/__tests__/signUpTheme.test.ts
+- TypeScript typecheck passes for signUpTheme.ts
+
+**Commit:** 5d6bb80
+
+## Codebase Patterns
+
+### V2 Color Usage
+- Primary accent: #C89BCC (lavender) for buttons, icons, interactive elements
+- Gold (#EC9C27): VIP/premium indicators ONLY
+- Background: #2D1E2F (dark plum), #4E2A4F (medium plum)
+- Glassmorphism: rgba backgrounds with subtle borders
+
+### Export Pattern
+```typescript
+export const CONST_NAME = {
+  // values
+} as const;
+
+export type ConstName = typeof CONST_NAME;
+```
+
+### Test Pattern
+Tests use Jest-style describe/it blocks to verify:
+- Color values match V2 palette
+- Gradients include lavender variants
+- Spacing follows V2 standards (44px icon circles, 18px card radius)
+- Typography follows V2 scale (18pt headers, 15pt card titles, 36pt large counts)

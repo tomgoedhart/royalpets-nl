@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Costume } from "@/lib/costumes";
+import type { TierId } from "@/lib/pricing";
 import type { Database } from "@/types/supabase";
 
 type PetType = Database["public"]["Enums"]["pet_type"];
@@ -36,6 +37,9 @@ export interface CreationState {
   
   // Step 4: Preview
   selectedImageIndex: number | null;
+  
+  // Step 5: Pricing
+  selectedTierId: TierId | null;
 }
 
 export interface CreationActions {
@@ -65,6 +69,9 @@ export interface CreationActions {
   // Step 4: Preview actions
   setSelectedImageIndex: (index: number | null) => void;
   
+  // Step 5: Pricing actions
+  setSelectedTierId: (tierId: TierId | null) => void;
+  
   // Session management
   resetSession: () => void;
   clearGeneration: () => void;
@@ -84,6 +91,7 @@ const initialState: CreationState = {
   generatedImages: null,
   generationError: null,
   selectedImageIndex: null,
+  selectedTierId: null,
 };
 
 const stepOrder: CreationStep[] = ["upload", "select", "generate", "preview", "pricing"];
@@ -141,6 +149,11 @@ export const useCreationStore = create<CreationStore>()(
                 return false;
               }
               break;
+            case "pricing":
+              if (state.selectedTierId === null) {
+                return false;
+              }
+              break;
           }
         }
         
@@ -178,6 +191,9 @@ export const useCreationStore = create<CreationStore>()(
       // Step 4: Preview actions
       setSelectedImageIndex: (index) => set({ selectedImageIndex: index }),
 
+      // Step 5: Pricing actions
+      setSelectedTierId: (tierId) => set({ selectedTierId: tierId }),
+
       // Session management
       resetSession: () => {
         set(initialState);
@@ -211,6 +227,7 @@ export const useCreationStore = create<CreationStore>()(
         generatedImages: state.generatedImages,
         generationError: state.generationError,
         selectedImageIndex: state.selectedImageIndex,
+        selectedTierId: state.selectedTierId,
       }),
     }
   )
@@ -225,6 +242,7 @@ export function useStepValidation() {
     isSelectionComplete: !!store.selectedCostume,
     isGenerationComplete: store.generationStatus === "completed" && !!store.generatedImages,
     isPreviewComplete: store.selectedImageIndex !== null,
+    isPricingComplete: store.selectedTierId !== null,
   };
 }
 
