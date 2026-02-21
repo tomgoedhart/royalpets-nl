@@ -72,6 +72,22 @@
   - 41 tests for gallery, image-card, watermark, and lightbox components
   - Build passes, all 195 tests pass
 
+#### story-8-state-management: Zustand State Management
+- Status: Completed
+- Date: 2026-02-21
+- Summary:
+  - lib/store.ts with Zustand store for CreationState using persist middleware
+  - Store persisted to localStorage with automatic rehydration
+  - Actions for each state transition: setUploadedImages, setSelectedCostume, setGenerationStatus, etc.
+  - Navigation guards via canNavigateToStep() to prevent skipping steps
+  - Session recovery on page refresh via Zustand persist middleware
+  - app/create/layout.tsx with progress bar showing 4 steps (Upload, Kostuum, Voorbeeld, Bestellen)
+  - Progress bar with visual indicators for completed, current, and upcoming steps
+  - Updated existing pages (upload, select, generate, preview) to use the store
+  - Components updated: costume-grid.tsx (external selectedCostumeId prop), progress-anim.tsx (portraitId prop)
+  - 36 tests for store actions, step navigation, and persistence
+  - Typecheck passes, build passes, all 231 tests pass
+
 ### Codebase Patterns
 
 #### Testing Patterns
@@ -113,7 +129,30 @@
 - Wrap pages using useSearchParams in Suspense boundary with loading fallback
 - Use aria-pressed for toggle/select buttons to indicate selected state
 
-### Remaining Stories: 13
+#### Zustand Store Patterns
+- Use persist middleware from zustand/middleware for localStorage persistence
+- Use createJSONStorage(() => localStorage) for SSR compatibility
+- Define CreationState and CreationActions interfaces separately for type safety
+- Use partialize option to select which state to persist
+- Implement canNavigateToStep() for navigation guards between steps
+- Use resetSession() to clear both state and localStorage
+- Prefer external props over internal state for shared selections
+- Helper functions for step names/descriptions keep UI text organized
+
+### Remaining Stories: 12
+- story-9-order-management
+- story-10-webhook-handlers
+- story-11-print-partner-integration
+- story-12-user-dashboard
+- story-13-admin-panel
+- story-14-email-notifications
+- story-15-analytics
+- story-16-seo-optimization
+- story-17-performance
+- story-18-accessibility
+- story-19-e2e-testing
+- story-20-deployment
+- story-21-documentation
 - story-8-stripe-integration
 - story-9-order-management
 - story-10-webhook-handlers
