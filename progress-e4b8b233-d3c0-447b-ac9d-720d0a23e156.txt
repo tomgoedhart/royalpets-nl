@@ -1,0 +1,112 @@
+# RoyalPets.nl - Progress Log
+## Run ID: e4b8b233-d3c0-447b-ac9d-720d0a23e156
+
+### Completed Stories
+
+#### story-1-db-schema: Database Schema and Supabase Setup
+- Status: Completed
+- Date: 2026-02-20
+
+#### story-2-project-setup: Next.js Project Setup with Design System
+- Status: Completed
+- Date: 2026-02-20
+
+#### story-3-file-upload: File Upload with R2 Storage
+- Status: Completed
+- Date: 2026-02-20
+
+#### story-4-costume-selection: Costume Data and Selection UI
+- Status: Completed
+- Date: 2026-02-20
+
+#### story-5-ai-generation-api: AI Generation API Endpoint
+- Status: Completed
+- Date: 2026-02-20
+- Summary:
+  - OpenAI GPT-4o integration with error handling and retry logic (lib/openai.ts)
+  - POST endpoint accepting imageUrl and costumeId (app/api/generate/route.ts)
+  - Input validation for imageUrl, costumeId, petType, petName
+  - Image download from R2 with timeout and content-type validation
+  - 4 portrait variations generation via GPT-4o Image API
+  - R2 upload of generated images with 24h expiry
+  - Supabase portraits table integration for job tracking
+  - Rate limiting (5 generations per IP per hour)
+  - Comprehensive error handling with portrait status updates (pending → generating → completed/failed)
+  - Costume prompt templates (lib/prompts.ts) for all 8 costumes (Koning, Koningin, Prinses, Ridder, Admiraal, Generaal, Hertog, Gravin)
+  - 21 tests for generation endpoint with mocked OpenAI
+  - Fixed jest.setup.ts polyfills for NextResponse and Request
+  - Build passes, typecheck passes, all 130 tests pass
+
+#### story-6-generation-loading: Generation Loading State UI
+- Status: Completed
+- Date: 2026-02-21
+- Summary:
+  - app/create/generate/page.tsx with automatic generation trigger and polling
+  - components/create/generate/progress-anim.tsx with animated crown, progress percentage
+  - Rotating Dutch status messages (Foto analyseren, Kostuum aanpassen, Koninklijke details, Portret schilderen, Laatste finishing touches)
+  - hooks/use-generation.ts hook for generation status polling with retry/cancel support
+  - Error state with retry button and Dutch error messages
+  - Cancel generation option with cleanup
+  - Auto-redirect to preview when complete
+  - app/api/generate/status/route.ts API endpoint with GET/DELETE/OPTIONS handlers
+  - Simulated progress calculation based on elapsed time
+  - localStorage integration for session recovery
+  - 24 tests for loading state functionality including component, hook, and API tests
+  - TypeScript fixes for nullable database fields
+  - Typecheck passes, all 154 tests pass
+
+### Codebase Patterns
+
+#### Testing Patterns
+- Use jest.mock() for mocking dependencies
+- Mock modules with selective imports: jest.mock("@/lib/prompts", () => ({ ...jest.requireActual("@/lib/prompts"), fn: jest.fn() }))
+- Polyfill Response, Request, Headers, AbortSignal for API route tests in jest.setup.ts
+- Mock NextResponse with static json() and redirect() methods
+- Use --forceExit flag for jest to prevent hanging
+
+#### API Route Patterns
+- Use NextRequest from next/server for typed request handling
+- Return NextResponse.json() with proper status codes
+- Include rate limit headers on responses
+- Use try-catch blocks with specific error handling
+- Update database records on both success and failure
+
+#### OpenAI Integration Patterns
+- Configure OpenAI client with maxRetries and timeout
+- Use exponential backoff with jitter for retries
+- Don't retry on 4xx errors except rate limits (429)
+- Generate variations with slightly different prompts for diversity
+
+#### R2 Integration Patterns
+- Use generateFileKey() for unique filenames
+- Set isTemporary: true for 24h expiry on preview images
+- Include metadata for tracking (portraitId, costumeId, etc.)
+
+#### React Hook Patterns
+- Use refs to store previous values for retry functionality
+- Cleanup abort controllers and timeouts in useEffect cleanup
+- Use renderHook from @testing-library/react for hook tests
+- Separate polling logic from state management
+
+#### Component State Patterns
+- Use localStorage for session recovery across page refreshes
+- Implement proper cleanup on unmount (cancelAnimationFrame, abort controllers)
+- Use requestAnimationFrame for smooth progress animations
+- Status messages as array of objects with duration for rotating display
+
+### Remaining Stories: 14
+- story-7-portrait-preview-ui
+- story-8-stripe-integration
+- story-9-order-management
+- story-10-webhook-handlers
+- story-11-print-partner-integration
+- story-12-user-dashboard
+- story-13-admin-panel
+- story-14-email-notifications
+- story-15-analytics
+- story-16-seo-optimization
+- story-17-performance
+- story-18-accessibility
+- story-19-e2e-testing
+- story-20-deployment
+- story-21-documentation
