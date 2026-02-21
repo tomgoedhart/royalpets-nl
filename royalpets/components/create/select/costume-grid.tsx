@@ -7,15 +7,15 @@ import { CostumeCard } from "./costume-card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2 } from "lucide-react";
 
-const STORAGE_KEY = "royalpets-selected-costume";
-
 interface CostumeGridProps {
+  selectedCostumeId?: string | null;
   onCostumeSelect?: (costume: Costume) => void;
   onContinue?: () => void;
   showContinueButton?: boolean;
 }
 
 export function CostumeGrid({
+  selectedCostumeId,
   onCostumeSelect,
   onContinue,
   showContinueButton = true,
@@ -24,38 +24,24 @@ export function CostumeGrid({
   const [selectedCostume, setSelectedCostume] = useState<Costume | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load from localStorage on mount
+  // Initialize from prop if provided
   useEffect(() => {
-    const loadSavedCostume = () => {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          const costume = costumes.find((c) => c.id === parsed.id);
-          if (costume) {
-            setSelectedCostume(costume);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load costume from localStorage:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSavedCostume();
-  }, []);
-
-  // Save to localStorage when selection changes
-  useEffect(() => {
-    if (selectedCostume) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ id: selectedCostume.id }));
-      } catch (error) {
-        console.error("Failed to save costume to localStorage:", error);
+    if (selectedCostumeId) {
+      const costume = costumes.find((c) => c.id === selectedCostumeId);
+      if (costume) {
+        setSelectedCostume(costume);
       }
     }
-  }, [selectedCostume]);
+    setIsLoading(false);
+  }, [selectedCostumeId]);
+
+  // Sync with external prop changes
+  useEffect(() => {
+    if (selectedCostumeId !== undefined) {
+      const costume = costumes.find((c) => c.id === selectedCostumeId);
+      setSelectedCostume(costume || null);
+    }
+  }, [selectedCostumeId]);
 
   const handleCostumeSelect = useCallback(
     (costume: Costume) => {

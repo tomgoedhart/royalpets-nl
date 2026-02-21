@@ -1,16 +1,6 @@
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CostumeGrid } from "@/components/create/select/costume-grid";
 import { costumes } from "@/lib/costumes";
-
-// Mock localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-};
-Object.defineProperty(window, "localStorage", {
-  value: localStorageMock,
-});
 
 describe("CostumeGrid", () => {
   const mockOnCostumeSelect = jest.fn();
@@ -18,7 +8,6 @@ describe("CostumeGrid", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    localStorageMock.getItem.mockReturnValue(null);
   });
 
   it("should render all costumes by default", async () => {
@@ -77,27 +66,14 @@ describe("CostumeGrid", () => {
     expect(mockOnCostumeSelect).toHaveBeenCalled();
   });
 
-  it("should save selection to localStorage", async () => {
-    render(<CostumeGrid showContinueButton={false} />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Koning")).toBeInTheDocument();
-    });
-
-    fireEvent.click(screen.getByText("Koning"));
-
-    await waitFor(() => {
-      expect(localStorageMock.setItem).toHaveBeenCalledWith(
-        "royalpets-selected-costume",
-        expect.stringContaining("koning")
-      );
-    });
-  });
-
-  it("should load saved selection from localStorage", async () => {
-    localStorageMock.getItem.mockReturnValue(JSON.stringify({ id: "ridder" }));
-
-    render(<CostumeGrid showContinueButton={false} />);
+  it("should render costume as selected when selectedCostumeId prop is provided", async () => {
+    render(
+      <CostumeGrid 
+        selectedCostumeId="ridder" 
+        onCostumeSelect={mockOnCostumeSelect} 
+        showContinueButton={false} 
+      />
+    );
 
     await waitFor(() => {
       // The ridder card should have aria-pressed="true"
@@ -128,5 +104,36 @@ describe("CostumeGrid", () => {
     // Then click continue
     fireEvent.click(screen.getByText("Continue"));
     expect(mockOnContinue).toHaveBeenCalled();
+  });
+
+  it("should update selection when selectedCostumeId prop changes", async () => {
+    const { rerender } = render(
+      <CostumeGrid 
+        selectedCostumeId="koning" 
+        onCostumeSelect={mockOnCostumeSelect} 
+        showContinueButton={false} 
+      />
+    );
+
+    await waitFor(() => {
+      const buttons = screen.getAllByRole("button");
+      const koningButton = buttons.find((b) => b.textContent?.includes("Koning"));
+      expect(koningButton).toHaveAttribute("aria-pressed", "true");
+    });
+
+    // Change prop
+    rerender(
+      <CostumeGrid 
+        selectedCostumeId="ridder" 
+        onCostumeSelect={mockOnCostumeSelect} 
+        showContinueButton={false} 
+      />
+    );
+
+    await waitFor(() => {
+      const buttons = screen.getAllByRole("button");
+      const ridderButton = buttons.find((b) => b.textContent?.includes("Ridder"));
+      expect(ridderButton).toHaveAttribute("aria-pressed", "true");
+    });
   });
 });

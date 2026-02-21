@@ -6,98 +6,76 @@ import Head from "next/head";
 import { ProgressAnimation } from "@/components/create/generate/progress-anim";
 import { useGeneration } from "@/hooks/use-generation";
 import { toast } from "sonner";
-
-const GENERATION_CONFIG = {
-  storageKeys: {
-    selectedCostume: "royalpets-selected-costume",
-    uploadedImage: "royalpets-uploaded-image",
-    generationJob: "royalpets-generation-job",
-  },
-};
-
-interface CostumeData {
-  id: string;
-  name: string;
-}
-
-interface UploadedImageData {
-  url: string;
-  key: string;
-}
-
-interface GenerationJob {
-  portraitId: string;
-  status: "pending" | "generating" | "completed" | "failed";
-  startedAt: string;
-}
+import { useCreationStore } from "@/lib/store";
 
 export default function GeneratePage() {
   const router = useRouter();
-  const [costume, setCostume] = useState<CostumeData | null>(null);
-  const [uploadedImage, setUploadedImage] = useState<UploadedImageData | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load data from localStorage on mount
+  const {
+    selectedCostume,
+    uploadedImages,
+    selectedImageId,
+    portraitId,
+    generationStatus,
+    setPortraitId,
+    setGenerationStatus,
+    setGeneratedImages,
+    setCurrentStep,
+  } = useCreationStore();
+
+  // Get the selected image URL
+  const selectedImage = uploadedImages.find((img) => img.id === selectedImageId);
+
+  // Check prerequisites and recover session
   useEffect(() => {
-    try {
-      const savedCostume = localStorage.getItem(GENERATION_CONFIG.storageKeys.selectedCostume);
-      const savedImage = localStorage.getItem(GENERATION_CONFIG.storageKeys.uploadedImage);
-      const savedJob = localStorage.getItem(GENERATION_CONFIG.storageKeys.generationJob);
-
-      if (savedCostume) {
-        setCostume(JSON.parse(savedCostume));
-      }
-
-      if (savedImage) {
-        setUploadedImage(JSON.parse(savedImage));
-      }
-
-      // Check for existing job
-      if (savedJob) {
-        const job: GenerationJob = JSON.parse(savedJob);
-        // If job is recent (within last hour), use it
-        const jobAge = Date.now() - new Date(job.startedAt).getTime();
-        if (jobAge < 60 * 60 * 1000) {
-          setHasStarted(true);
-        } else {
-          // Clear old job
-          localStorage.removeItem(GENERATION_CONFIG.storageKeys.generationJob);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load generation data:", error);
+    // Check if user has completed previous steps
+    if (uploadedImages.length === 0 || !selectedImageId) {
+      toast.error("Upload eerst foto's van je huisdier");
+      router.replace("/create/upload");
+      return;
     }
-  }, []);
 
-  // Redirect if missing required data
-  useEffect(() => {
-    if (!costume || !uploadedImage) {
-      const timer = setTimeout(() => {
-        if (!costume) {
-          toast.error("Selecteer eerst een kostuum");
-          router.push("/create/select");
-        } else if (!uploadedImage) {
-          toast.error("Upload eerst een foto");
-          router.push("/create/upload");
-        }
-      }, 100);
-      return () => clearTimeout(timer);
+    if (!selectedCostume) {
+      toast.error("Selecteer eerst een kostuum");
+      router.replace("/create/select");
+      return;
     }
-  }, [costume, uploadedImage, router]);
+
+    // Check for existing generation
+    if (portraitId && generationStatus) {
+      if (generationStatus === "completed") {
+        // Generation already done, redirect to preview
+        router.replace("/create/preview");
+        return;
+      } else if (generationStatus === "generating" || generationStatus === "pending") {
+        // Resume existing generation
+        setHasStarted(true);
+      }
+    }
+
+    setIsLoading(false);
+  }, [uploadedImages, selectedImageId, selectedCostume, portraitId, generationStatus, router]);
 
   // Handle generation start
   const handleStartGeneration = useCallback(async () => {
-    if (!costume || !uploadedImage) return;
+    if (!selectedCostume || !selectedImage) {
+      throw new Error("Ontbrekende gegevens voor generatie");
+    }
 
     setHasStarted(true);
+    setGenerationStatus("generating");
 
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imageUrl: uploadedImage.url,
-          costumeId: costume.id,
+          imageUrl: selectedImage.url,
+          costumeId: selectedCostume.id,
+          petType: useCreationStore.getState().petType || undefined,
+          petName: useCreationStore.getState().petName || undefined,
         }),
       });
 
@@ -107,48 +85,59 @@ export default function GeneratePage() {
         throw new Error(data.message || "Generatie mislukt");
       }
 
-      // Save job to localStorage
-      const job: GenerationJob = {
-        portraitId: data.portraitId,
-        status: "generating",
-        startedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(GENERATION_CONFIG.storageKeys.generationJob, JSON.stringify(job));
+      setPortraitId(data.portraitId);
 
       return data.portraitId;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Generatie mislukt";
+      setGenerationStatus("failed");
       toast.error(message);
       throw error;
     }
-  }, [costume, uploadedImage]);
+  }, [selectedCostume, selectedImage, setPortraitId, setGenerationStatus]);
 
   // Handle generation complete
-  const handleComplete = useCallback((portraitId: string) => {
-    // Clear generation job from localStorage
-    localStorage.removeItem(GENERATION_CONFIG.storageKeys.generationJob);
+  const handleComplete = useCallback((images: string[]) => {
+    setGenerationStatus("completed");
+    setGeneratedImages(images);
+    setCurrentStep("preview");
     // Redirect to preview page
-    router.push(`/create/preview?id=${portraitId}`);
-  }, [router]);
+    router.push("/create/preview");
+  }, [setGenerationStatus, setGeneratedImages, setCurrentStep, router]);
 
   // Handle generation error
   const handleError = useCallback((error: Error) => {
+    setGenerationStatus("failed");
     toast.error(error.message || "Er is iets misgegaan");
-  }, []);
+  }, [setGenerationStatus]);
 
   // Handle cancel
   const handleCancel = useCallback(() => {
-    localStorage.removeItem(GENERATION_CONFIG.storageKeys.generationJob);
-    localStorage.removeItem(GENERATION_CONFIG.storageKeys.selectedCostume);
+    // Clear generation state but keep upload and costume selection
+    setPortraitId(null);
+    setGenerationStatus(null);
+    setCurrentStep("select");
     router.push("/create/select");
-  }, [router]);
+  }, [setPortraitId, setGenerationStatus, setCurrentStep, router]);
 
-  if (!costume || !uploadedImage) {
+  if (isLoading) {
     return (
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-center">
+          <svg className="mx-auto h-8 w-8 animate-spin text-blue-600" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <p className="mt-4 text-gray-600">Laden...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (!selectedCostume || !selectedImage) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
       </div>
     );
   }
@@ -160,75 +149,56 @@ export default function GeneratePage() {
         <meta name="description" content="Uw royal pet portrait wordt gegenereerd" />
       </Head>
 
-      <div className="container mx-auto max-w-6xl px-4 py-8">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Uw Portret Wordt Gemaakt
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Even geduld terwijl onze AI uw {costume.name.toLowerCase()} portret creëert
-          </p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="mb-12">
-          <div className="flex items-center justify-center">
-            {[1, 2, 3, 4].map((step, index) => (
-              <div key={step} className="flex items-center">
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full font-semibold ${
-                    step === 3
-                      ? "bg-blue-600 text-white"
-                      : step < 3
-                      ? "bg-green-500 text-white"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
-                >
-                  {step < 3 ? (
-                    <svg
-                      className="h-5 w-5"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  ) : (
-                    step
-                  )}
-                </div>
-                {index < 3 && (
-                  <div
-                    className={`h-1 w-16 sm:w-24 md:w-32 ${
-                      step < 3 ? "bg-green-500" : "bg-gray-200"
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="mt-2 flex justify-center gap-8 sm:gap-16 md:gap-24 text-sm text-gray-500">
-            <span className="text-green-600 font-medium">Upload</span>
-            <span className="text-green-600 font-medium">Stijl</span>
-            <span className="text-blue-600 font-medium">Genereren</span>
-            <span>Preview</span>
+      <div className="mx-auto max-w-2xl">
+        {/* Info Banner */}
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-xl">
+              👑
+            </div>
+            <div>
+              <p className="font-medium text-blue-900">
+                Kostuum: {selectedCostume.name}
+              </p>
+              <p className="text-sm text-blue-700">
+                {selectedCostume.description}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Main Content - Progress Animation */}
-        <div className="mx-auto max-w-2xl">
-          <ProgressAnimation
-            costumeName={costume.name}
-            hasStarted={hasStarted}
-            onStartGeneration={handleStartGeneration}
-            onComplete={handleComplete}
-            onError={handleError}
-            onCancel={handleCancel}
-          />
+        {/* Progress Animation */}
+        <ProgressAnimation
+          costumeName={selectedCostume.name}
+          hasStarted={hasStarted}
+          portraitId={portraitId}
+          onStartGeneration={handleStartGeneration}
+          onComplete={handleComplete}
+          onError={handleError}
+          onCancel={handleCancel}
+        />
+
+        {/* Generation Info */}
+        <div className="mt-6 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">
+          <h3 className="mb-2 font-medium text-gray-900">Wat gebeurt er nu?</h3>
+          <ul className="space-y-2">
+            <li className="flex items-start gap-2">
+              <span className="text-blue-500">1.</span>
+              <span>Onze AI analyseert de foto van je huisdier</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-500">2.</span>
+              <span>Het geselecteerde kostuum wordt aangepast aan je huisdier</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-500">3.</span>
+              <span>We genereren 4 unieke variaties voor je om uit te kiezen</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-blue-500">4.</span>
+              <span>Dit duurt meestal 30-60 seconden</span>
+            </li>
+          </ul>
         </div>
       </div>
     </>
