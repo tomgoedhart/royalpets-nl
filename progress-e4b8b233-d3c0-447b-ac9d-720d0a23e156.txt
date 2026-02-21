@@ -102,6 +102,26 @@
   - 25 tests for pricing library, tier-card, tier-selector components, and store updates
   - Build passes, all 283 tests pass
 
+#### story-10-stripe-checkout: Stripe Checkout Integration
+- Status: Completed
+- Date: 2026-02-21
+- Summary:
+  - lib/stripe.ts with Stripe client configuration using API version 2025-02-24.acacia
+  - BTW/VAT calculation with 21% Dutch rate (calculatePriceWithBTW)
+  - Tier ID validation and product name/description helpers
+  - app/api/checkout/session/route.ts POST endpoint accepting tierId, portraitId, customerEmail
+  - API validates tier, portrait completion status, and calculates price with BTW
+  - Stripe Checkout Session created with iDEAL and credit card payment methods
+  - Session stored in orders table with pending status
+  - hooks/use-checkout.ts hook with initiateCheckout, validation, and error handling
+  - app/checkout/page.tsx with Suspense boundary for useSearchParams
+  - app/checkout/checkout-form.tsx with email input and navigation guards
+  - app/checkout/cancel/page.tsx for cancelled payments with retry option
+  - app/checkout/success/page.tsx for successful payments with next steps
+  - Guest checkout supported (email only, no account required)
+  - 58 new tests: 19 for stripe lib, 14 for checkout API, 20 for use-checkout hook
+  - Typecheck passes, build passes, all 341 tests pass
+
 ### Codebase Patterns
 
 #### Testing Patterns
@@ -163,31 +183,28 @@
 - Show "Meest gekozen" badge for the popular tier option
 - Use aria-pressed attribute on selection buttons for accessibility
 
-### Remaining Stories: 12
-- story-9-order-management
-- story-10-webhook-handlers
-- story-11-print-partner-integration
-- story-12-user-dashboard
-- story-13-admin-panel
-- story-14-email-notifications
-- story-15-analytics
-- story-16-seo-optimization
-- story-17-performance
-- story-18-accessibility
-- story-19-e2e-testing
-- story-20-deployment
-- story-21-documentation
-- story-8-stripe-integration
-- story-9-order-management
-- story-10-webhook-handlers
-- story-11-print-partner-integration
-- story-12-user-dashboard
-- story-13-admin-panel
-- story-14-email-notifications
-- story-15-analytics
-- story-16-seo-optimization
-- story-17-performance
-- story-18-accessibility
-- story-19-e2e-testing
-- story-20-deployment
-- story-21-documentation
+#### Stripe Integration Patterns
+- Use Stripe SDK with explicit API version for stability (2025-02-24.acacia)
+- Separate server-side and client-side concerns (lib/stripe.ts for server)
+- Calculate BTW/VAT inclusively: price includes tax, calculate excl. amount
+- Store tier ID to database enum mapping for consistency
+- Create order record before Stripe session for tracking
+- Use session metadata to pass portrait/tier info to webhooks
+- Support multiple payment methods (ideal, card) for Dutch market
+- Set locale to "nl" for Dutch checkout experience
+- Wrap client components using useSearchParams in Suspense boundary
+- Extract form logic to separate component when using Suspense
+
+### Remaining Stories: 10
+- story-11-webhook-handlers
+- story-12-print-partner-integration
+- story-13-user-dashboard
+- story-14-admin-panel
+- story-15-email-notifications
+- story-16-analytics
+- story-17-seo-optimization
+- story-18-performance
+- story-19-accessibility
+- story-20-e2e-testing
+- story-21-deployment
+- story-22-documentation
