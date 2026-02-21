@@ -88,6 +88,20 @@
   - 36 tests for store actions, step navigation, and persistence
   - Typecheck passes, build passes, all 231 tests pass
 
+#### story-9-tier-selection: Product Tier Selection
+- Status: Completed
+- Date: 2026-02-21
+- Summary:
+  - lib/pricing.ts with 4 tier definitions (digital-basic, digital-premium, print-digital, canvas-deluxe)
+  - Pricing tiers with Dutch names: Digitaal Basis €9.99, Digitaal Premium €19.99, Print + Digitaal €34.99, Canvas Deluxe €59.99
+  - components/pricing/tier-card.tsx with name, price, features list, popular badge
+  - components/pricing/tier-selector.tsx with 4 tier cards and feature comparison section
+  - app/create/pricing/page.tsx with tier selector, costume info, trust badges
+  - Updated lib/store.ts with selectedTierId state and setSelectedTierId action
+  - Selected tier persisted to localStorage via Zustand persist middleware
+  - 25 tests for pricing library, tier-card, tier-selector components, and store updates
+  - Build passes, all 283 tests pass
+
 ### Codebase Patterns
 
 #### Testing Patterns
@@ -138,6 +152,16 @@
 - Use resetSession() to clear both state and localStorage
 - Prefer external props over internal state for shared selections
 - Helper functions for step names/descriptions keep UI text organized
+
+#### Pricing Component Patterns
+- Define pricing tiers in a separate library file (lib/pricing.ts)
+- Use TierId type for type-safe tier identification
+- Include formatted price strings for display consistency
+- Mark popular tiers with isPopular flag for visual emphasis
+- Include feature flags (includesPrint, includesHighRes, etc.) for comparison tables
+- Use Card component with conditional border styling for selection states
+- Show "Meest gekozen" badge for the popular tier option
+- Use aria-pressed attribute on selection buttons for accessibility
 
 ### Remaining Stories: 12
 - story-9-order-management
