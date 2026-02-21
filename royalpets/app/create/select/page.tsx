@@ -20,11 +20,11 @@ export default function SelectPage() {
 
   const handleContinue = () => {
     if (!selectedCostume) {
-      toast.error("Please select a costume to continue");
+      toast.error("Selecteer eerst een kostuum om door te gaan");
       return;
     }
-    // Navigate to next step (review/generate page)
-    router.push("/create/review");
+    // Navigate to generation page
+    router.push("/create/generate");
   };
 
   return (
