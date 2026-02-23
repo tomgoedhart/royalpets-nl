@@ -72,6 +72,17 @@
   - 41 tests for gallery, image-card, watermark, and lightbox components
   - Build passes, all 195 tests pass
 
+#### story-13-email-system: Email Notification System
+- Status: Completed
+- Date: 2026-02-21
+- Summary:
+  - Added Resend-backed email service in lib/email.ts with Dutch templates for order confirmation, digital ready, print received, shipped, delivered, and welcome
+  - Added React Email template components in components/emails/order-confirmation.tsx and components/emails/download-ready.tsx
+  - Added internal API endpoint app/api/email/send/route.ts for template-based email dispatch
+  - Added tests for template generation and email API route with mocked sending
+  - Added Jest TextEncoder/TextDecoder polyfills for email rendering compatibility
+  - Typecheck, full test suite, and build all pass
+
 ### Codebase Patterns
 
 #### Testing Patterns
@@ -80,6 +91,7 @@
 - Polyfill Response, Request, Headers, AbortSignal for API route tests in jest.setup.ts
 - Mock NextResponse with static json() and redirect() methods
 - Use --forceExit flag for jest to prevent hanging
+- For ESM-ish template renderers in Jest, mock rendering adapters directly in tests when runtime VM flags are not enabled
 
 #### API Route Patterns
 - Use NextRequest from next/server for typed request handling
@@ -87,31 +99,6 @@
 - Include rate limit headers on responses
 - Use try-catch blocks with specific error handling
 - Update database records on both success and failure
-
-#### OpenAI Integration Patterns
-- Configure OpenAI client with maxRetries and timeout
-- Use exponential backoff with jitter for retries
-- Don't retry on 4xx errors except rate limits (429)
-- Generate variations with slightly different prompts for diversity
-
-#### R2 Integration Patterns
-- Use generateFileKey() for unique filenames
-- Set isTemporary: true for 24h expiry on preview images
-- Include metadata for tracking (portraitId, costumeId, etc.)
-
-#### React Hook Patterns
-- Use refs to store previous values for retry functionality
-- Cleanup abort controllers and timeouts in useEffect cleanup
-- Use renderHook from @testing-library/react for hook tests
-- Separate polling logic from state management
-
-#### Component State Patterns
-- Use localStorage for session recovery across page refreshes
-- Implement proper cleanup on unmount (cancelAnimationFrame, abort controllers)
-- Use requestAnimationFrame for smooth progress animations
-- Status messages as array of objects with duration for rotating display
-- Wrap pages using useSearchParams in Suspense boundary with loading fallback
-- Use aria-pressed for toggle/select buttons to indicate selected state
 
 ### Remaining Stories: 13
 - story-8-stripe-integration
