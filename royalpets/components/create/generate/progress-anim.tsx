@@ -20,8 +20,9 @@ const TOTAL_DURATION = STATUS_MESSAGES.reduce((acc, msg) => acc + msg.duration, 
 interface ProgressAnimationProps {
   costumeName: string;
   hasStarted: boolean;
+  portraitId?: string | null;
   onStartGeneration: () => Promise<string>;
-  onComplete: (portraitId: string) => void;
+  onComplete: (images: string[]) => void;
   onError: (error: Error) => void;
   onCancel: () => void;
 }
@@ -31,6 +32,7 @@ type GenerationState = "idle" | "generating" | "completed" | "error";
 export function ProgressAnimation({
   costumeName,
   hasStarted,
+  portraitId: externalPortraitId,
   onStartGeneration,
   onComplete,
   onError,
@@ -39,9 +41,11 @@ export function ProgressAnimation({
   const [state, setState] = useState<GenerationState>(hasStarted ? "generating" : "idle");
   const [progress, setProgress] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const [portraitId, setPortraitId] = useState<string | null>(null);
+  const [internalPortraitId, setInternalPortraitId] = useState<string | null>(externalPortraitId || null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  
+  const portraitId = externalPortraitId || internalPortraitId;
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const startTimeRef = useRef<number>(0);
@@ -120,7 +124,7 @@ export function ProgressAnimation({
           setState("completed");
           clearInterval(pollInterval);
           // Small delay to show 100% completion
-          setTimeout(() => onComplete(portraitId), 500);
+          setTimeout(() => onComplete(data.images || []), 500);
         } else if (data.status === "failed") {
           throw new Error(data.error || "Generatie mislukt");
         }
@@ -149,7 +153,7 @@ export function ProgressAnimation({
 
     try {
       const id = await onStartGeneration();
-      setPortraitId(id);
+      setInternalPortraitId(id);
     } catch (error) {
       setState("error");
       setErrorMessage(error instanceof Error ? error.message : "Generatie mislukt");
@@ -171,10 +175,11 @@ export function ProgressAnimation({
     setProgress(0);
     setCurrentMessageIndex(0);
     setErrorMessage(null);
+    setInternalPortraitId(null);
 
     try {
       const id = await onStartGeneration();
-      setPortraitId(id);
+      setInternalPortraitId(id);
     } catch (error) {
       setState("error");
       setErrorMessage(error instanceof Error ? error.message : "Generatie mislukt");
